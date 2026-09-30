@@ -78,9 +78,18 @@ final class AclRegistryTest extends TestCase
         $registry = new AclRegistry();
         $result   = $registry->define('a', 1)->define('b', 2);
 
-        self::assertSame($registry, $result);
-        self::assertTrue($registry->has('a'));
-        self::assertTrue($registry->has('b'));
+        self::assertTrue($result->has('a'));
+        self::assertTrue($result->has('b'));
+    }
+
+    public function testDefineIsImmutable(): void
+    {
+        $original = new AclRegistry();
+        $extended = $original->define('a', 1);
+
+        self::assertNotSame($original, $extended);
+        self::assertFalse($original->has('a'));
+        self::assertTrue($extended->has('a'));
     }
 
     public function testDefineDuplicateNameThrows(): void
@@ -109,5 +118,13 @@ final class AclRegistryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         (new AclRegistry())->define('bad', $bits);
+    }
+
+    public function testDefineDuplicateBitValueThrows(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage("Permission bit 8 is already used by 'admin'.");
+
+        $this->registry->define('superadmin', 8);
     }
 }

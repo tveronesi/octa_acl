@@ -90,7 +90,17 @@ $acl->grants($registry->get('admin'));     // false
 $registry->namesFor($acl); // ['editor', 'publisher']
 ```
 
-`define()` enforces that each value is a positive power of 2 and that names are unique — it throws `\InvalidArgumentException` or `\LogicException` otherwise.
+`define()` enforces that each value is a positive power of 2, that names are unique, and that bit values are unique — it throws `\InvalidArgumentException` or `\LogicException` otherwise.
+
+`AclRegistry` is immutable: every `define()` call returns a **new instance** with the added permission. The original registry is never modified, so chaining is safe and sharing a base registry across modules is side-effect-free:
+
+```php
+$base  = (new AclRegistry())->define('reader', 1)->define('editor', 2);
+$admin = $base->define('admin', 8); // new instance — $base is unchanged
+
+$base->has('admin');  // false
+$admin->has('admin'); // true
+```
 
 ## Storing and loading
 
@@ -132,6 +142,8 @@ $acl = $acl->withRevoke(ROLE_READER, ROLE_PUBLISHER);
 // $acl now grants only ROLE_EDITOR
 ```
 
+Both `withGrant()` and `withRevoke()` validate that every bit is a positive power of 2 and throw `\InvalidArgumentException` otherwise — the same constraint `AclRegistry::define()` enforces.
+
 ## API reference
 
 ### `Acl`
@@ -140,17 +152,18 @@ $acl = $acl->withRevoke(ROLE_READER, ROLE_PUBLISHER);
 |--------|-------------|
 | `Acl::none()` | Returns an Acl with no permissions. |
 | `Acl::fromInt(int $bits)` | Reconstructs an Acl from a stored integer. |
-| `grants(int ...$permissions): bool` | `true` if **all** given bits are granted. |
-| `grantsAny(int ...$permissions): bool` | `true` if **any** given bits are granted. |
-| `withGrant(int ...$permissions): static` | New Acl with permissions added. |
-| `withRevoke(int ...$permissions): static` | New Acl with permissions removed. |
+| `grants(int ...$permissions): bool` | `true` if **all** given bits are granted. Requires at least one argument. |
+| `grantsAny(int ...$permissions): bool` | `true` if **any** given bits are granted. Requires at least one argument. |
+| `withGrant(int ...$permissions): static` | New Acl with permissions added. Each bit must be a positive power of 2. |
+| `withRevoke(int ...$permissions): static` | New Acl with permissions removed. Each bit must be a positive power of 2. |
+| `equals(Acl $other): bool` | `true` if both instances hold the same bit value. |
 | `toInt(): int` | Raw integer for storage. |
 
 ### `AclRegistry`
 
 | Method | Description |
 |--------|-------------|
-| `define(string $name, int $bits): static` | Registers a named permission (power-of-2 only). |
+| `define(string $name, int $bits): static` | Returns a new registry with the permission added. Enforces positive power-of-2 and uniqueness of both name and bit value. |
 | `get(string $name): int` | Returns the bit value for a name. |
 | `has(string $name): bool` | Checks whether a name is registered. |
 | `all(): array` | Returns all registered `name => bits` pairs. |

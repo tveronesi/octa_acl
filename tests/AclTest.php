@@ -51,9 +51,21 @@ final class AclTest extends TestCase
 
     public function testGrantsZeroIsAlwaysTrue(): void
     {
-        // Zero required bits is vacuously satisfied
+        // Passing literal 0 is an explicit (if odd) choice — vacuously satisfied
         self::assertTrue(Acl::none()->grants(0));
         self::assertTrue(Acl::fromInt(7)->grants(0));
+    }
+
+    public function testGrantsWithNoArgsThrows(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Acl::none()->grants();
+    }
+
+    public function testGrantsAnyWithNoArgsThrows(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Acl::none()->grantsAny();
     }
 
     public function testGrantsAnyReturnsTrueWhenAtLeastOneMatches(): void
@@ -125,6 +137,29 @@ final class AclTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         Acl::fromInt(-1);
+    }
+
+    public function testEquals(): void
+    {
+        $a = Acl::fromInt(5);
+        $b = Acl::fromInt(5);
+        $c = Acl::fromInt(3);
+
+        self::assertTrue($a->equals($b));
+        self::assertFalse($a->equals($c));
+        self::assertTrue(Acl::none()->equals(Acl::none()));
+    }
+
+    public function testWithGrantRejectsNonPowerOfTwo(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Acl::none()->withGrant(3);
+    }
+
+    public function testWithRevokeRejectsNonPowerOfTwo(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Acl::fromInt(7)->withRevoke(6);
     }
 
     /** @return array<string, array{int}> */

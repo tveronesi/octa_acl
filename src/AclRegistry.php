@@ -33,9 +33,19 @@ final class AclRegistry
             throw new \LogicException(sprintf("Permission '%s' is already defined.", $name));
         }
 
-        $this->permissions[$name] = $bits;
+        $existingName = array_search($bits, $this->permissions, true);
+        if ($existingName !== false) {
+            throw new \LogicException(sprintf(
+                "Permission bit %d is already used by '%s'.",
+                $bits,
+                $existingName
+            ));
+        }
 
-        return $this;
+        $clone = clone $this;
+        $clone->permissions[$name] = $bits;
+
+        return $clone;
     }
 
     /**
