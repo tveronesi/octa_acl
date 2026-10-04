@@ -52,23 +52,23 @@ final class Acl
     /**
      * Returns a new Acl with the given permissions added.
      */
-    public function withGrant(int ...$permissions): static
+    public function withGrant(int ...$permissions): Acl
     {
         array_walk($permissions, static fn(int $p) => self::assertValidBit($p));
         $bits = array_reduce($permissions, static fn(int $c, int $p) => $c | $p, $this->bits);
 
-        return new static($bits);
+        return new Acl($bits);
     }
 
     /**
      * Returns a new Acl with the given permissions removed.
      */
-    public function withRevoke(int ...$permissions): static
+    public function withRevoke(int ...$permissions): Acl
     {
         array_walk($permissions, static fn(int $p) => self::assertValidBit($p));
         $mask = array_reduce($permissions, static fn(int $c, int $p) => $c | $p, 0);
 
-        return new static($this->bits & ~$mask);
+        return new Acl($this->bits & ~$mask);
     }
 
     private static function assertValidBit(int $bit): void
@@ -93,15 +93,15 @@ final class Acl
         return $this->bits;
     }
 
-    public static function fromInt(int $bits): static
+    public static function fromInt(int $bits): Acl
     {
-        return new static($bits);
+        return new Acl($bits);
     }
 
     /**
      * Returns an Acl with no permissions granted.
      */
-    public static function none(): static
+    public static function none(): Acl
     {
         return new static(0);
     }

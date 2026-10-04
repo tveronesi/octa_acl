@@ -21,7 +21,7 @@ final class AclRegistry
      * @throws \InvalidArgumentException if $bits is not a positive power of 2
      * @throws \LogicException           if the name is already registered
      */
-    public function define(string $name, int $bits): static
+    public function define(string $name, int $bits): AclRegistry
     {
         if ($bits <= 0 || ($bits & ($bits - 1)) !== 0) {
             throw new \InvalidArgumentException(
